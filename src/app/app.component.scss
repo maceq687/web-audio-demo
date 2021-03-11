@@ -1,0 +1,23 @@
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+}
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  p {
+    width: 256px;
+    text-align: center;
+    margin: 12px 0 0;
+  }
+}
+.pad {
+  padding: 0.7em;
+}
+mat-slider {
+  width: 256px;
+}

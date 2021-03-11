@@ -7,7 +7,7 @@
       <p>Pitch</p>
     </div>
     <div class="flex-row">
-      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="pitchCtrl" (change)="pitchChange($event)"></mat-slider>
+      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="pitchCtrl" (input)="pitchChange($event)"></mat-slider>
     </div>
   </div>
 </div>

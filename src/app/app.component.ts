@@ -13,6 +13,8 @@ export class AppComponent implements OnInit {
   pitchCtrl: number = 32;
   pitch: number = 440;
   gainNode: any;
+  trigger: any;
+  tempo: number = 666.67;
 
   constructor(@Inject(AUDIO_CONTEXT) private readonly context: AudioContext) {}
 
@@ -22,8 +24,10 @@ export class AppComponent implements OnInit {
     if (this.disabled === false) {
       this.context.resume();
       this.gainNode.gain.setValueAtTime(0.25, this.context.currentTime);
+      // this.trigger = setInterval(this.pitchChange, this.tempo);
     } else {
       this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 1);
+      // clearInterval(this.trigger);
     }
   }
 
@@ -31,14 +35,17 @@ export class AppComponent implements OnInit {
     return this.disabled ? 'Start audio' : 'Stop audio';
   }
 
-  pitchChange($event: any) {
-    this.pitchCtrl = $event.value;
-    this.pitch = toFrequency(this.pitchCtrl)
+  pitchChange($event: any): any {
+    this.pitch = toFrequency($event.value);
     this.oscillator.frequency.setValueAtTime(this.pitch, this.context.currentTime);
-    // console.log($event)
-    // console.log(this.pitchCtrl)
-    // console.log(this.pitch)
+    // console.log($event);
+    // console.log(this.pitchCtrl);
+    // console.log(this.pitch);
   }
+
+  // setPitch() {
+  //   this.oscillator.frequency.setValueAtTime(this.pitch, this.context.currentTime);
+  // }
 
   ngOnInit() {
     this.oscillator = this.context.createOscillator();

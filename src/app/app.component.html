@@ -10,6 +10,14 @@
       <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="pitchCtrl" (input)="pitchChange($event)"></mat-slider>
     </div>
   </div>
+  <div class="pad">
+    <div class="flex-row">
+      <p>Waveshape</p>
+    </div>
+    <div class="flex-row">
+      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="shapeCtrl" (input)="shapeChange($event)"></mat-slider>
+    </div>
+  </div>
 </div>
 
 <router-outlet></router-outlet>

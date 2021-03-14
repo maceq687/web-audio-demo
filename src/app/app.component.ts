@@ -9,9 +9,13 @@ import { AUDIO_CONTEXT } from '@ng-web-apis/audio';
 export class AppComponent implements OnInit {
   title = 'web-audio-demo';
   disabled = true;
-  oscillator: any;
-  pitchCtrl = 32;
-  pitch = 440;
+  oscillator1: any;
+  oscillator2: any;
+  pitchCtrl = 64;
+  shapeCtrl = 0;
+  pitch = 523.25;
+  gainOsc1: any;
+  gainOsc2: any;
   gainNode: any;
   trigger: any;
   tempo = 666.67;
@@ -83,8 +87,16 @@ export class AppComponent implements OnInit {
     // console.log(this.pitch);
   }
 
+  shapeChange($event: any): any {
+    const value = $event.value / 127;
+    console.log(value);
+    this.gainOsc1.gain.linearRampToValueAtTime(1 - value, this.context.currentTime + 0.3);
+    this.gainOsc2.gain.linearRampToValueAtTime(value, this.context.currentTime + 0.3);
+  }
+
   setPitch(): void {
-    this.oscillator.frequency.setValueAtTime(this.pitch, this.context.currentTime);
+    this.oscillator1.frequency.setValueAtTime(this.pitch, this.context.currentTime);
+    this.oscillator2.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     // console.log(this.pitch);
     this.gainNode.gain.linearRampToValueAtTime(0.25, this.context.currentTime + 0.3);
     this.decay();
@@ -95,13 +107,25 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.oscillator = this.context.createOscillator();
+    // initiate building blocks
+    this.oscillator1 = this.context.createOscillator();
+    this.oscillator2 = this.context.createOscillator();
+    this.gainOsc1 = this.context.createGain();
+    this.gainOsc2 = this.context.createGain();
     this.gainNode = this.context.createGain();
-
-    this.oscillator.connect(this.gainNode);
+    // connect all building blocks
+    this.oscillator1.connect(this.gainOsc1);
+    this.oscillator2.connect(this.gainOsc2);
+    this.gainOsc1.connect(this.gainNode);
+    this.gainOsc2.connect(this.gainNode);
     this.gainNode.connect(this.context.destination);
-
-    this.oscillator.start();
+    // set (initial) parameters for all blocks
+    this.oscillator1.start();
+    this.oscillator2.start();
+    this.oscillator1.type = 'triangle';
+    this.oscillator2.type = 'sawtooth';
+    this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
+    this.gainOsc2.gain.setValueAtTime(0.0, this.context.currentTime);
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
   }
 

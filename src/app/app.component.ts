@@ -11,10 +11,12 @@ export class AppComponent implements OnInit {
   disabled = true;
   oscillator1: any;
   oscillator2: any;
+  oscillator3: any;
   pitchCtrl = 64;
   velocityCtrl = 64;
   gateCtrl = 64;
   envelopeCtrl = 64;
+  osc2Ctrl = 64;
   shapeCtrl = 0;
   gateWidth = 0.5;
   attack = 0.5;
@@ -23,6 +25,7 @@ export class AppComponent implements OnInit {
   velocity = 0.5;
   gainOsc1: any;
   gainOsc2: any;
+  gainOsc3: any;
   gainNode: any;
   trigger: any;
   tempoBPM = 180; // set the tempo (in BPM)
@@ -99,6 +102,7 @@ export class AppComponent implements OnInit {
   setPitch(): void {
     this.oscillator1.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     this.oscillator2.frequency.setValueAtTime(this.pitch, this.context.currentTime);
+    this.oscillator3.frequency.setValueAtTime(this.pitch - 24, this.context.currentTime);
     // console.log(this.pitch);
     this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
     this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
@@ -123,6 +127,10 @@ export class AppComponent implements OnInit {
     // console.log(this.decay);
   }
 
+  osc2Change($event: any): any {
+
+  }
+
   shapeChange($event: any): any {
     const value = $event.value / 127;
     // console.log(value);
@@ -134,22 +142,28 @@ export class AppComponent implements OnInit {
     // initiate building blocks
     this.oscillator1 = this.context.createOscillator();
     this.oscillator2 = this.context.createOscillator();
+    this.oscillator3 = this.context.createOscillator();
     this.gainOsc1 = this.context.createGain();
     this.gainOsc2 = this.context.createGain();
+    this.gainOsc3 = this.context.createGain();
     this.gainNode = this.context.createGain();
     // connect all building blocks
     this.oscillator1.connect(this.gainOsc1);
     this.oscillator2.connect(this.gainOsc2);
+    this.oscillator3.connect(this.gainOsc3);
     this.gainOsc1.connect(this.gainNode);
     this.gainOsc2.connect(this.gainNode);
+    this.gainOsc3.connect(this.gainNode);
     this.gainNode.connect(this.context.destination);
     // set (initial) parameters for all blocks
     this.oscillator1.start();
     this.oscillator2.start();
+    this.oscillator3.start();
     this.oscillator1.type = 'triangle';
     this.oscillator2.type = 'sawtooth';
     this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
     this.gainOsc2.gain.setValueAtTime(0.0, this.context.currentTime);
+    this.gainOsc3.gain.setValueAtTime(0.5, this.context.currentTime);
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
     // this.gateChange(64); // WIP value = 64
   }

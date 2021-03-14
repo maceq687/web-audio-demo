@@ -20,18 +20,26 @@
   </div>
   <div class="pad">
     <div class="flex-row">
-      <p>Waveshape</p>
-    </div>
-    <div class="flex-row">
-      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="shapeCtrl" (input)="shapeChange($event)"></mat-slider>
-    </div>
-  </div>
-  <div class="pad">
-    <div class="flex-row">
       <p>Gate width</p>
     </div>
     <div class="flex-row">
       <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="gateCtrl" (input)="gateChange($event)"></mat-slider>
+    </div>
+  </div>
+  <div class="pad">
+    <div class="flex-row">
+      <p>Envelope Shape</p>
+    </div>
+    <div class="flex-row">
+      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="envelopeCtrl" (input)="envelopeChange($event)"></mat-slider>
+    </div>
+  </div>
+  <div class="pad">
+    <div class="flex-row">
+      <p>Waveshape</p>
+    </div>
+    <div class="flex-row">
+      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="shapeCtrl" (input)="shapeChange($event)"></mat-slider>
     </div>
   </div>
 </div>

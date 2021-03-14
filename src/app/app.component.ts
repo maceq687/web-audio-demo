@@ -13,9 +13,12 @@ export class AppComponent implements OnInit {
   oscillator2: any;
   pitchCtrl = 64;
   velocityCtrl = 64;
-  shapeCtrl = 0;
   gateCtrl = 64;
+  envelopeCtrl = 64;
+  shapeCtrl = 0;
   gateWidth = 0.5;
+  attack = 0.5;
+  decay = 0.5;
   pitch = 523.25;
   velocity = 0.5;
   gainOsc1: any;
@@ -97,8 +100,9 @@ export class AppComponent implements OnInit {
     this.oscillator1.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     this.oscillator2.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     // console.log(this.pitch);
-    this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * 0.5 / 1000);
-    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 2 * (this.gateWidth * 0.5 / 1000));
+    this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
+    this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
+      this.context.currentTime + this.gateWidth * this.attack / 1000 + this.gateWidth * this.decay / 1000);
     // console.log(this.gateWidth * 0.5 / 1000);
   }
 
@@ -110,6 +114,13 @@ export class AppComponent implements OnInit {
   gateChange($event: any): any {
     this.gateWidth = ($event.value / 127) * 0.8 * this.tempoMS + 100;
     // console.log(this.gateWidth);
+  }
+
+  envelopeChange($event: any): any {
+    this.attack = $event.value / 127 * 0.8 + 0.1;
+    this.decay = (1 - ($event.value / 127)) * 0.8 + 0.1;
+    // console.log(this.attack);
+    // console.log(this.decay);
   }
 
   shapeChange($event: any): any {

@@ -12,6 +12,14 @@
   </div>
   <div class="pad">
     <div class="flex-row">
+      <p>Velocity</p>
+    </div>
+    <div class="flex-row">
+      <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="velocityCtrl" (input)="velocityChange($event)"></mat-slider>
+    </div>
+  </div>
+  <div class="pad">
+    <div class="flex-row">
       <p>Waveshape</p>
     </div>
     <div class="flex-row">

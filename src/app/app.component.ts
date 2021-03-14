@@ -13,13 +13,16 @@ export class AppComponent implements OnInit {
   oscillator2: any;
   pitchCtrl = 64;
   shapeCtrl = 0;
+  gateCtrl = 64;
+  gateWidth = 0.5;
   pitch = 523.25;
   gainOsc1: any;
   gainOsc2: any;
   gainNode: any;
   trigger: any;
-  tempo = 666.67;
-  rootMidiNote = 60;
+  tempoBPM = 120; // set the tempo (in BPM)
+  tempoMS = 666.67;
+  rootMidiNote = 60; // set root note (midi number)
 
   constructor(@Inject(AUDIO_CONTEXT) private readonly context: AudioContext) {}
 
@@ -29,7 +32,8 @@ export class AppComponent implements OnInit {
     if (this.disabled === false) {
       this.context.resume();
       // this.gainNode.gain.setValueAtTime(0.25, this.context.currentTime);
-      this.trigger = setInterval(() => { this.setPitch(); }, this.tempo);
+      this.tempoMS = 60000 / this.tempoBPM; // BPM to ms conversion
+      this.trigger = setInterval(() => { this.setPitch(); }, this.tempoMS);
     } else {
       // this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 1);
       clearInterval(this.trigger);
@@ -87,23 +91,25 @@ export class AppComponent implements OnInit {
     // console.log(this.pitch);
   }
 
-  shapeChange($event: any): any {
-    const value = $event.value / 127;
-    console.log(value);
-    this.gainOsc1.gain.linearRampToValueAtTime(1 - value, this.context.currentTime + 0.3);
-    this.gainOsc2.gain.linearRampToValueAtTime(value, this.context.currentTime + 0.3);
-  }
-
   setPitch(): void {
     this.oscillator1.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     this.oscillator2.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     // console.log(this.pitch);
-    this.gainNode.gain.linearRampToValueAtTime(0.25, this.context.currentTime + 0.3);
-    this.decay();
+    this.gainNode.gain.exponentialRampToValueAtTime(0.25, this.context.currentTime + this.gateWidth * 0.5 / 1000);
+    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 2 * (this.gateWidth * 0.5 / 1000));
+    // console.log(this.gateWidth * 0.5 / 1000);
   }
 
-  decay(): any {
-    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.8);
+  gateChange($event: any): any {
+    this.gateWidth = ($event.value / 127) * 0.8 * this.tempoMS + 100;
+    // console.log(this.gateWidth);
+  }
+
+  shapeChange($event: any): any {
+    const value = $event.value / 127;
+    // console.log(value);
+    this.gainOsc1.gain.linearRampToValueAtTime(1 - value, this.context.currentTime + 0.3);
+    this.gainOsc2.gain.linearRampToValueAtTime(value, this.context.currentTime + 0.3);
   }
 
   ngOnInit(): void {
@@ -127,8 +133,8 @@ export class AppComponent implements OnInit {
     this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
     this.gainOsc2.gain.setValueAtTime(0.0, this.context.currentTime);
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
+    // this.gateChange(64); // WIP value = 64
   }
-
 }
 
 export function toFrequency(note: number): number {

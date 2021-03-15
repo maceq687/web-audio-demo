@@ -21,15 +21,16 @@ export class AppComponent implements OnInit {
   gateWidth = 0.5;
   attack = 0.5;
   decay = 0.5;
-  pitch = 523.25;
+  pitchMidi = 72;
   velocity = 0.5;
+  osc2tune = 0.5;
   gainOsc1: any;
   gainOsc2: any;
   gainOsc3: any;
   gainNode: any;
   trigger: any;
-  tempoBPM = 180; // set the tempo (in BPM)
-  tempoMS = 666.67;
+  tempoBPM = 90; // set the tempo (in BPM)
+  tempoMS = 333.34;
   rootMidiNote = 60; // set root note (midi number)
 
   constructor(@Inject(AUDIO_CONTEXT) private readonly context: AudioContext) {}
@@ -40,7 +41,7 @@ export class AppComponent implements OnInit {
     if (this.disabled === false) {
       this.context.resume();
       // this.gainNode.gain.setValueAtTime(0.25, this.context.currentTime);
-      this.tempoMS = 60000 / this.tempoBPM; // BPM to ms conversion
+      this.tempoMS = 60000 / this.tempoBPM / 4; // BPM to ms conversion
       this.trigger = setInterval(() => { this.setPitch(); }, this.tempoMS);
     } else {
       // this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 1);
@@ -92,7 +93,7 @@ export class AppComponent implements OnInit {
         value = 5;
         break;
     }
-    this.pitch = toFrequency(value);
+    this.pitchMidi = value;
     // this.oscillator.frequency.setValueAtTime(this.pitch, this.context.currentTime);
     // console.log($event);
     // console.log(this.pitchCtrl);
@@ -100,10 +101,11 @@ export class AppComponent implements OnInit {
   }
 
   setPitch(): void {
-    this.oscillator1.frequency.setValueAtTime(this.pitch, this.context.currentTime);
-    this.oscillator2.frequency.setValueAtTime(this.pitch, this.context.currentTime);
-    this.oscillator3.frequency.setValueAtTime(this.pitch - 24, this.context.currentTime);
+    this.oscillator1.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
+    this.oscillator2.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
+    this.oscillator3.frequency.setValueAtTime(toFrequency(this.pitchMidi + this.osc2tune), this.context.currentTime);
     // console.log(this.pitch);
+    // console.log(this.osc2tune);
     this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
     this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
       this.context.currentTime + this.gateWidth * this.attack / 1000 + this.gateWidth * this.decay / 1000);
@@ -111,7 +113,7 @@ export class AppComponent implements OnInit {
   }
 
   velocityChange($event: any): any {
-    this.velocity = $event.value / 127 * 0.6 + 0.4;
+    this.velocity = $event.value / 127 * 0.8 + 0.2;
     // console.log(this.velocity);
   }
 
@@ -128,7 +130,34 @@ export class AppComponent implements OnInit {
   }
 
   osc2Change($event: any): any {
-
+    let value = Math.round($event.value / 25.6);
+    switch (value) {
+      case 0:
+        value = -24;
+        break;
+      case 1:
+        value = -12;
+        break;
+      case 2:
+        value = -5;
+        break;
+      case 3:
+        value = 0.5;
+        break;
+      case 4:
+        value = 7;
+        break;
+      case 5:
+        value = 12;
+        break;
+      case 6:
+        value = 24;
+        break;
+      default:
+        value = 3;
+        break;
+    }
+    this.osc2tune = value;
   }
 
   shapeChange($event: any): any {
@@ -163,7 +192,7 @@ export class AppComponent implements OnInit {
     this.oscillator2.type = 'sawtooth';
     this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
     this.gainOsc2.gain.setValueAtTime(0.0, this.context.currentTime);
-    this.gainOsc3.gain.setValueAtTime(0.5, this.context.currentTime);
+    this.gainOsc3.gain.setValueAtTime(0.7, this.context.currentTime);
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
     // this.gateChange(64); // WIP value = 64
   }
@@ -172,3 +201,53 @@ export class AppComponent implements OnInit {
 export function toFrequency(note: number): number {
   return Math.pow(2, (note - 69) / 12) * 440;
 }
+
+window.addEventListener('keydown', (event: any) => {
+  keyToPitch(event);
+});
+
+export function keyToPitch(event: any): number {
+  let pitchKey = 64;
+  let value = event.code;
+  switch (value) {
+    case 'KeyA':
+      pitchKey = 0;
+      break;
+    case 'KeyS':
+      pitchKey = 13;
+      break;
+    case 'KeyD':
+      pitchKey = 25;
+      break;
+    case 'KeyF':
+      pitchKey = 38;
+      break;
+    case 'KeyG':
+      pitchKey = 51;
+      break;
+    case 'KeyH':
+      pitchKey = 64;
+      break;
+    case 'KeyJ':
+      pitchKey = 76;
+      break;
+    case 'KeyK':
+      pitchKey = 89;
+      break;
+    case 'KeyL':
+      pitchKey = 101;
+      break;
+    case 'Semicolon':
+      pitchKey = 114;
+      break;
+    case 'Quote':
+      pitchKey = 127;
+      break;
+    default:
+      value = 'KeyH';
+      break;
+  }
+  // console.log(pitchKey);
+  return pitchKey;
+}
+

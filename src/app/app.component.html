@@ -66,6 +66,27 @@
         </div>
       </mat-card>
     </div>
+    <div class="pad">
+      <mat-card>
+        <mat-card-title>Filter</mat-card-title>
+        <div class="pad">
+          <div class="flex-row">
+            <p>Cutoff</p>
+          </div>
+          <div class="flex-row">
+            <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="lpfCtrl" (input)="lpfChange($event)"></mat-slider>
+          </div>
+        </div>
+        <div class="pad">
+          <div class="flex-row">
+            <p>LFO frequency</p>
+          </div>
+          <div class="flex-row">
+            <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="lfoCtrl" (input)="lfoChange($event)"></mat-slider>
+          </div>
+        </div>
+      </mat-card>
+    </div>
   </div>
 </div>
 

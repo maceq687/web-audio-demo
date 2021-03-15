@@ -12,12 +12,16 @@ export class AppComponent implements OnInit {
   oscillator1: any;
   oscillator2: any;
   oscillator3: any;
+  lfo: any;
+  filter: any;
   pitchCtrl = 64;
   velocityCtrl = 64;
   gateCtrl = 64;
   envelopeCtrl = 64;
   osc2Ctrl = 64;
   shapeCtrl = 0;
+  lpfCtrl = 64;
+  lfoCtrl = 64;
   gateWidth = 0.5;
   attack = 0.5;
   decay = 0.5;
@@ -28,6 +32,7 @@ export class AppComponent implements OnInit {
   gainOsc2: any;
   gainOsc3: any;
   gainNode: any;
+  gainLfo: any;
   trigger: any;
   tempoBPM = 90; // set the tempo (in BPM)
   tempoMS = 333.34;
@@ -167,33 +172,73 @@ export class AppComponent implements OnInit {
     this.gainOsc2.gain.linearRampToValueAtTime(value, this.context.currentTime + 0.3);
   }
 
+  lpfChange($event: any): any {
+    let value = $event.value / 127;
+    // value = value * value;
+    value = Math.exp(Math.log(2) * value) - 1;
+    value = value * -1 + 1;
+    console.log(value);
+    const mult = value * 1950 + 500;
+    const sum = (value * -1 + 1) * 2450 + 2550;
+    const q = value * 6;
+    // console.log(value);
+    // console.log(mult);
+    // console.log(sum);
+    this.filter.frequency.setValueAtTime(sum, this.context.currentTime);
+    this.gainLfo.gain.setValueAtTime(mult, this.context.currentTime);
+    this.filter.Q.setValueAtTime(q, this.context.currentTime);
+  }
+
+  lfoChange($event: any): any {
+    let value = Math.round($event.value / 127 * 4);
+    if ( value === 0) {
+      value = 0.5;
+    } else {
+      value = value;
+    }
+    // console.log(value);
+    const lfoFreq = 1 / (this.tempoMS) * 1000 * value;
+    // console.log(this.tempoMS);
+    // console.log(lfoFreq);
+    this.lfo.frequency.setValueAtTime(lfoFreq, this.context.currentTime);
+  }
+
   ngOnInit(): void {
     // initiate building blocks
     this.oscillator1 = this.context.createOscillator();
     this.oscillator2 = this.context.createOscillator();
     this.oscillator3 = this.context.createOscillator();
+    this.lfo = this.context.createOscillator();
+    this.filter = this.context.createBiquadFilter();
     this.gainOsc1 = this.context.createGain();
     this.gainOsc2 = this.context.createGain();
     this.gainOsc3 = this.context.createGain();
     this.gainNode = this.context.createGain();
+    this.gainLfo = this.context.createGain();
     // connect all building blocks
     this.oscillator1.connect(this.gainOsc1);
     this.oscillator2.connect(this.gainOsc2);
     this.oscillator3.connect(this.gainOsc3);
-    this.gainOsc1.connect(this.gainNode);
-    this.gainOsc2.connect(this.gainNode);
-    this.gainOsc3.connect(this.gainNode);
+    this.lfo.connect(this.gainLfo);
+    this.gainLfo.connect(this.filter.frequency);
+    this.gainOsc1.connect(this.filter);
+    this.gainOsc2.connect(this.filter);
+    this.gainOsc3.connect(this.filter);
+    this.filter.connect(this.gainNode);
     this.gainNode.connect(this.context.destination);
     // set (initial) parameters for all blocks
     this.oscillator1.start();
     this.oscillator2.start();
     this.oscillator3.start();
+    this.lfo.start();
     this.oscillator1.type = 'triangle';
     this.oscillator2.type = 'sawtooth';
+    this.filter.type = 'lowpass';
     this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
     this.gainOsc2.gain.setValueAtTime(0.0, this.context.currentTime);
     this.gainOsc3.gain.setValueAtTime(0.7, this.context.currentTime);
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
+    this.gainLfo.gain.setValueAtTime(500, this.context.currentTime);
     // this.gateChange(64); // WIP value = 64
   }
 }

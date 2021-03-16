@@ -87,6 +87,27 @@
         </div>
       </mat-card>
     </div>
+    <div class="pad">
+      <mat-card>
+        <mat-card-title>Effects</mat-card-title>
+        <div class="pad">
+          <div class="flex-row">
+            <p>Delay</p>
+          </div>
+          <div class="flex-row">
+            <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="delCtrl" (input)="delChange($event)"></mat-slider>
+          </div>
+        </div>
+        <div class="pad">
+          <div class="flex-row">
+            <p>Distortion</p>
+          </div>
+          <div class="flex-row">
+            <mat-slider [disabled]="disabled" max="127" thumbLabel [value]="distCtrl" (input)="distChange($event)"></mat-slider>
+          </div>
+        </div>
+      </mat-card>
+    </div>
   </div>
 </div>
 

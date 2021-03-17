@@ -13,13 +13,15 @@ export class AppComponent implements OnInit {
   oscillator2: any;
   oscillator3: any;
   lfo: any;
+  kick: any;
   filter: any;
   distortion: any;
   delay: any;
+  analyser: any;
   pitchCtrl = 64;
   velocityCtrl = 64;
   gateCtrl = 64;
-  envelopeCtrl = 64;
+  envelopeCtrl = 20;
   osc2Ctrl = 64;
   shapeCtrl = 0;
   lpfCtrl = 64;
@@ -39,9 +41,11 @@ export class AppComponent implements OnInit {
   gainNode: any;
   gainLfo: any;
   gainDel: any;
+  gainKick: any;
   trigger: any;
+  step = 0;
   sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 8, 6 , 6, 4, 2];
-  tempoBPM = 90; // set the tempo (in BPM)
+  tempoBPM = 23; // set the tempo (in BPM)
   tempoMS = 333.34;
   rootMidiNote = 60; // set root note (midi number)
 
@@ -58,6 +62,8 @@ export class AppComponent implements OnInit {
     } else {
       // this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 1);
       clearInterval(this.trigger);
+      // this.step = 0;
+      this.toneDecay();
     }
   }
 
@@ -123,10 +129,34 @@ export class AppComponent implements OnInit {
     this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
     this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
       this.context.currentTime + this.gateWidth * this.attack / 1000 + this.gateWidth * this.decay / 1000);
+    // setTimeout(this.toneDecay(), this.attack);
     // console.log(this.gateWidth * 0.5 / 1000);
     this.sequence.push(this.pitchMidi - this.rootMidiNote);
     this.sequence.shift();
     this.hasChange = false;
+    this.stepCount();
+  }
+
+  toneDecay(): any {
+    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + this.gateWidth * this.decay / 1000);
+  }
+
+  stepCount(): any {
+    this.step++;
+    if (this.step === 4) { this.step = 0; }
+    if (this.step === 1) { this.playKick(); }
+    // console.log(this.step);
+  }
+
+  playKick(): any {
+    this.gainKick.gain.exponentialRampToValueAtTime(0.3, this.context.currentTime + 0.01);
+    this.kick.frequency.linearRampToValueAtTime(110, this.context.currentTime + 0.01);
+    setTimeout(this.decayKick(), 100);
+  }
+
+  decayKick(): any {
+    this.gainKick.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.05);
+    this.kick.frequency.linearRampToValueAtTime(55, this.context.currentTime + 0.05);
   }
 
   velocityChange($event: any): any {
@@ -307,6 +337,7 @@ export class AppComponent implements OnInit {
     this.oscillator2 = this.context.createOscillator();
     this.oscillator3 = this.context.createOscillator();
     this.lfo = this.context.createOscillator();
+    this.kick = this.context.createOscillator();
     this.filter = this.context.createBiquadFilter();
     this.gainOsc1 = this.context.createGain();
     this.gainOsc2 = this.context.createGain();
@@ -314,8 +345,10 @@ export class AppComponent implements OnInit {
     this.gainNode = this.context.createGain();
     this.gainLfo = this.context.createGain();
     this.gainDel = this.context.createGain();
+    this.gainKick = this.context.createGain();
     this.distortion = this.context.createWaveShaper();
     this.delay = this.context.createDelay(1);
+    this.analyser = this.context.createAnalyser();
     // connect all building blocks
     this.oscillator1.connect(this.gainOsc1);
     this.oscillator2.connect(this.gainOsc2);
@@ -330,17 +363,25 @@ export class AppComponent implements OnInit {
     this.gainNode.connect(this.delay);
     this.delay.connect(this.gainDel);
     this.gainNode.connect(this.context.destination);
+    this.gainNode.connect(this.analyser);
     this.gainDel.connect(this.delay); // feedback loop
     this.gainDel.connect(this.context.destination);
+    this.gainDel.connect(this.analyser);
+    this.kick.connect(this.gainKick);
+    this.gainKick.connect(this.context.destination);
+    this.gainKick.connect(this.analyser);
     // set (initial) parameters for all blocks
     this.oscillator1.start();
     this.oscillator2.start();
     this.oscillator3.start();
     this.lfo.start();
+    this.kick.start();
     this.oscillator1.type = 'triangle';
     this.oscillator2.type = 'sawtooth';
     this.lfo.frequency.setValueAtTime(12, this.context.currentTime);
+    this.kick.frequency.setValueAtTime(55, this.context.currentTime);
     this.filter.type = 'lowpass';
+    this.filter.frequency.setValueAtTime(5000, this.context.currentTime);
     this.distortion.oversample = '4x';
     this.distortion.curve = distortionCurve(0);
     this.gainOsc1.gain.setValueAtTime(1.0, this.context.currentTime);
@@ -349,7 +390,46 @@ export class AppComponent implements OnInit {
     this.gainNode.gain.setValueAtTime(0.0, this.context.currentTime);
     this.gainLfo.gain.setValueAtTime(1, this.context.currentTime);
     this.gainDel.gain.setValueAtTime(0.5, this.context.currentTime);
-    this.gateChange({value: 64});
+    this.gainKick.gain.setValueAtTime(0.0, this.context.currentTime);
+    this.analyser.minDecibels = -90;
+    this.analyser.maxDecibels = -10;
+    this.analyser.smoothingTimeConstant = 0.85;
+    this.gateChange({value: 20});
+    this.drawScope();
+  }
+
+  drawScope(): any {
+    const canvas: any = document.querySelector('.visualizer');
+    const canvasCtx = canvas.getContext("2d");
+    let drawVisual: any;
+    this.analyser.fftSize = 2048;
+    const bufferLength = this.analyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+    canvasCtx?.clearRect(0, 0, canvas.width, canvas.height);
+    const draw = () => {
+      drawVisual = requestAnimationFrame(draw);
+      this.analyser.getByteTimeDomainData(dataArray);
+      canvasCtx.fillStyle = 'rgb(25,25,25)';
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = 'rgb(200, 200, 200)';
+      canvasCtx.beginPath();
+      const slideWidth = canvas.width * 1.0 / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        if (i === 0) {
+          canvasCtx?.moveTo(x, y);
+        } else {
+          canvasCtx?.lineTo(x, y);
+        }
+        x += slideWidth;
+      }
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    };
+    draw();
   }
 }
 

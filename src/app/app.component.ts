@@ -44,8 +44,8 @@ export class AppComponent implements OnInit {
   gainKick: any;
   trigger: any;
   step = 0;
-  sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 8, 6 , 6, 4, 2];
-  tempoBPM = 23; // set the tempo (in BPM)
+  sequence = [3, 4, 2, 0, 9, 6, 5, 6, 4, 3, 1, 0, 6 , 6, 4, 2];
+  tempoBPM = 90; // set the tempo (in BPM)
   tempoMS = 333.34;
   rootMidiNote = 60; // set root note (midi number)
 
@@ -56,7 +56,6 @@ export class AppComponent implements OnInit {
 
     if (this.disabled === false) {
       this.context.resume();
-      // this.gainNode.gain.setValueAtTime(0.25, this.context.currentTime);
       this.tempoMS = 60000 / this.tempoBPM / 4; // BPM to ms conversion
       this.trigger = setInterval(() => { this.setPitch(); }, this.tempoMS);
     } else {
@@ -113,10 +112,6 @@ export class AppComponent implements OnInit {
         break;
     }
     this.pitchMidi = value;
-    // this.oscillator.frequency.setValueAtTime(this.pitch, this.context.currentTime);
-    // console.log($event);
-    // console.log(this.pitchCtrl);
-    // console.log(this.pitch);
   }
 
   setPitch(): void {
@@ -124,13 +119,11 @@ export class AppComponent implements OnInit {
     this.oscillator1.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
     this.oscillator2.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
     this.oscillator3.frequency.setValueAtTime(toFrequency(this.pitchMidi + this.osc2tune), this.context.currentTime);
-    // console.log(this.pitch);
-    // console.log(this.osc2tune);
     this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
     this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
       this.context.currentTime + this.gateWidth * this.attack / 1000 + this.gateWidth * this.decay / 1000);
-    // setTimeout(this.toneDecay(), this.attack);
-    // console.log(this.gateWidth * 0.5 / 1000);
+    // setTimeout(this.toneDecay(), this.gateWidth * this.attack);
+    console.log(this.attack * this.gateWidth);
     this.sequence.push(this.pitchMidi - this.rootMidiNote);
     this.sequence.shift();
     this.hasChange = false;
@@ -145,7 +138,6 @@ export class AppComponent implements OnInit {
     this.step++;
     if (this.step === 4) { this.step = 0; }
     if (this.step === 1) { this.playKick(); }
-    // console.log(this.step);
   }
 
   playKick(): any {
@@ -161,7 +153,6 @@ export class AppComponent implements OnInit {
 
   velocityChange($event: any): any {
     this.velocity = $event.value / 127 * 0.8 + 0.2;
-    // console.log(this.velocity);
   }
 
   gateChange($event: any): any {
@@ -209,7 +200,6 @@ export class AppComponent implements OnInit {
 
   shapeChange($event: any): any {
     const value = $event.value / 127;
-    // console.log(value);
     this.gainOsc1.gain.linearRampToValueAtTime(1 - value, this.context.currentTime + 0.3);
     this.gainOsc2.gain.linearRampToValueAtTime(value, this.context.currentTime + 0.3);
   }
@@ -219,13 +209,9 @@ export class AppComponent implements OnInit {
     value = value * value;
     value = value * -1 + 1;
     // value = 1 - (Math.exp(Math.log(2) * value) - 1);
-    // console.log(value);
     const mult = value * 1950 + 500;
     const sum = (value * -1 + 1) * 2450 + 2550;
     const q = value * 4;
-    // console.log(value);
-    // console.log(mult);
-    // console.log(sum);
     this.filter.frequency.setValueAtTime(sum, this.context.currentTime);
     this.gainLfo.gain.setValueAtTime(mult, this.context.currentTime);
     this.filter.Q.setValueAtTime(q, this.context.currentTime);
@@ -238,10 +224,7 @@ export class AppComponent implements OnInit {
     } else {
       value = value;
     }
-    // console.log(value);
     const lfoFreq = 1 / (this.tempoMS) * 1000 * value;
-    // console.log(this.tempoMS);
-    // console.log(lfoFreq);
     this.lfo.frequency.setValueAtTime(lfoFreq, this.context.currentTime);
   }
 
@@ -268,17 +251,14 @@ export class AppComponent implements OnInit {
         break;
     }
     value = value * this.tempoMS / 1000;
-    // console.log(value);
     this.delay.delayTime.setValueAtTime(value, this.context.currentTime);
     let gainAmt = ($event.value / 127) * -1 + 1;
     gainAmt = gainAmt * 0.5 + 0.25;
-    // console.log(gainAmt);
     this.gainDel.gain.setValueAtTime(gainAmt, this.context.currentTime);
   }
 
   distChange($event: any): any {
     const value = $event.value / 1.27;
-    // console.log(value);
     this.distortion.curve = distortionCurve(value);
   }
 
@@ -324,9 +304,6 @@ export class AppComponent implements OnInit {
         value = 'KeyH';
         break;
     }
-    // console.log(pitchKey);
-    // this.pitchCtrl = pitchKey;
-    // this.pitchMidi = pitchKey;
     this.pitchChange({value: pitchKey});
     return pitchKey;
   }
@@ -449,53 +426,3 @@ export function distortionCurve(amount: number): any {
   }
   return curve;
 }
-
-window.addEventListener('keydown', (event: any) => {
-  keyToPitch(event);
-});
-
-export function keyToPitch(event: any): number {
-  let pitchKey = 64;
-  let value = event.code;
-  switch (value) {
-    case 'KeyA':
-      pitchKey = 0;
-      break;
-    case 'KeyS':
-      pitchKey = 13;
-      break;
-    case 'KeyD':
-      pitchKey = 25;
-      break;
-    case 'KeyF':
-      pitchKey = 38;
-      break;
-    case 'KeyG':
-      pitchKey = 51;
-      break;
-    case 'KeyH':
-      pitchKey = 64;
-      break;
-    case 'KeyJ':
-      pitchKey = 76;
-      break;
-    case 'KeyK':
-      pitchKey = 89;
-      break;
-    case 'KeyL':
-      pitchKey = 101;
-      break;
-    case 'Semicolon':
-      pitchKey = 114;
-      break;
-    case 'Quote':
-      pitchKey = 127;
-      break;
-    default:
-      value = 'KeyH';
-      break;
-  }
-  // console.log(pitchKey);
-  return pitchKey;
-}
-

@@ -20,21 +20,22 @@ export class AppComponent implements OnInit {
   analyser: any;
   pitchCtrl = 64;
   velocityCtrl = 64;
-  gateCtrl = 64;
-  envelopeCtrl = 20;
+  gateCtrl = 32;
+  envelopeCtrl = 96;
   osc2Ctrl = 64;
   shapeCtrl = 0;
   lpfCtrl = 64;
   lfoCtrl = 64;
   delCtrl = 0;
   distCtrl = 0;
-  gateWidth = 0.5;
-  attack = 0.5;
-  decay = 0.5;
-  pitchMidi = 72;
+  gateWidth = 150;
+  attack = 0.1;
+  decay = 0.9;
+  pitch = 12;
+  glide = 0.001;
   velocity = 0.5;
   osc2tune = 0.5;
-  hasChange = false;
+  osc1HasChanged = false;
   gainOsc1: any;
   gainOsc2: any;
   gainOsc3: any;
@@ -45,8 +46,9 @@ export class AppComponent implements OnInit {
   trigger: any;
   step = 0;
   sequence = [3, 4, 2, 0, 9, 6, 5, 6, 4, 3, 1, 0, 6 , 6, 4, 2];
+  osc1gateseq = [1, 1, 1, 1, 1, 1, 1, 1];
   tempoBPM = 90; // set the tempo (in BPM)
-  tempoMS = 333.34;
+  tempoMS = 60000 / this.tempoBPM / 4; // BPM to ms conversion
   rootMidiNote = 60; // set root note (midi number)
 
   constructor(@Inject(AUDIO_CONTEXT) private readonly context: AudioContext) {}
@@ -56,13 +58,9 @@ export class AppComponent implements OnInit {
 
     if (this.disabled === false) {
       this.context.resume();
-      this.tempoMS = 60000 / this.tempoBPM / 4; // BPM to ms conversion
       this.trigger = setInterval(() => { this.setPitch(); }, this.tempoMS);
     } else {
-      // this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 1);
       clearInterval(this.trigger);
-      // this.step = 0;
-      this.toneDecay();
     }
   }
 
@@ -71,128 +69,141 @@ export class AppComponent implements OnInit {
   }
 
   pitchChange($event: any): any {
-    this.hasChange = true;
+    this.osc1HasChanged = true;
     let value = Math.round($event.value / 12.7);
     switch (value) {
       case 0:
-        value = this.rootMidiNote;
+        value = 0;
         break;
       case 1:
-        value = this.rootMidiNote + 2;
+        value = 2;
         break;
       case 2:
-        value = this.rootMidiNote + 4;
+        value = 4;
         break;
       case 3:
-        value = this.rootMidiNote + 7;
-        break;
-      case 4:
-        value = this.rootMidiNote + 9;
-        break;
-      case 5:
-        value = this.rootMidiNote + 12;
-        break;
-      case 6:
-        value = this.rootMidiNote + 14;
-        break;
-      case 7:
-        value = this.rootMidiNote + 16;
-        break;
-      case 8:
-        value = this.rootMidiNote + 19;
-        break;
-      case 9:
-        value = this.rootMidiNote + 21;
-        break;
-      case 10:
-        value = this.rootMidiNote + 24;
-        break;
-      default:
-        value = 5;
-        break;
-    }
-    this.pitchMidi = value;
-  }
-
-  setPitch(): void {
-    if (!this.hasChange) { this.pitchMidi = this.sequence[0] + this.rootMidiNote; }
-    this.oscillator1.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
-    this.oscillator2.frequency.setValueAtTime(toFrequency(this.pitchMidi), this.context.currentTime);
-    this.oscillator3.frequency.setValueAtTime(toFrequency(this.pitchMidi + this.osc2tune), this.context.currentTime);
-    this.gainNode.gain.exponentialRampToValueAtTime(this.velocity, this.context.currentTime + this.gateWidth * this.attack / 1000);
-    this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
-      this.context.currentTime + this.gateWidth * this.attack / 1000 + this.gateWidth * this.decay / 1000);
-    // setTimeout(this.toneDecay(), this.gateWidth * this.attack);
-    console.log(this.attack * this.gateWidth);
-    this.sequence.push(this.pitchMidi - this.rootMidiNote);
-    this.sequence.shift();
-    this.hasChange = false;
-    this.stepCount();
-  }
-
-  toneDecay(): any {
-    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + this.gateWidth * this.decay / 1000);
-  }
-
-  stepCount(): any {
-    this.step++;
-    if (this.step === 4) { this.step = 0; }
-    if (this.step === 1) { this.playKick(); }
-  }
-
-  playKick(): any {
-    this.gainKick.gain.exponentialRampToValueAtTime(0.3, this.context.currentTime + 0.01);
-    this.kick.frequency.linearRampToValueAtTime(110, this.context.currentTime + 0.01);
-    setTimeout(this.decayKick(), 100);
-  }
-
-  decayKick(): any {
-    this.gainKick.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.05);
-    this.kick.frequency.linearRampToValueAtTime(55, this.context.currentTime + 0.05);
-  }
-
-  velocityChange($event: any): any {
-    this.velocity = $event.value / 127 * 0.8 + 0.2;
-  }
-
-  gateChange($event: any): any {
-    this.gateWidth = ($event.value / 127) * 0.8 * this.tempoMS + 100;
-    // console.log(this.gateWidth);
-  }
-
-  envelopeChange($event: any): any {
-    this.attack = $event.value / 127 * 0.8 + 0.1;
-    this.decay = (1 - ($event.value / 127)) * 0.8 + 0.1;
-    // console.log(this.attack);
-    // console.log(this.decay);
-  }
-
-  osc2Change($event: any): any {
-    let value = Math.round($event.value / 25.6);
-    switch (value) {
-      case 0:
-        value = -24;
-        break;
-      case 1:
-        value = -12;
-        break;
-      case 2:
-        value = -5;
-        break;
-      case 3:
-        value = 0.5;
-        break;
-      case 4:
         value = 7;
+        break;
+      case 4:
+        value = 9;
         break;
       case 5:
         value = 12;
         break;
       case 6:
+        value = 14;
+        break;
+      case 7:
+        value = 16;
+        break;
+      case 8:
+        value = 19;
+        break;
+      case 9:
+        value = 21;
+        break;
+      case 10:
         value = 24;
         break;
       default:
-        value = 3;
+        value = 5;
+        break;
+    }
+    this.pitch = value;
+  }
+
+  setPitch(): void {
+    const now = this.context.currentTime;
+    if (!this.osc1HasChanged) { this.pitch = this.sequence[0]; }
+    const osc1gate = this.osc1gateseq[this.step];
+    if (osc1gate === 1) {
+      this.oscillator1.frequency.exponentialRampToValueAtTime(toFrequency(this.pitch + this.rootMidiNote), now + this.glide);
+      this.oscillator2.frequency.exponentialRampToValueAtTime(toFrequency(this.pitch + this.rootMidiNote), now + this.glide);
+      this.oscillator3.frequency.exponentialRampToValueAtTime(toFrequency(this.osc2tune + this.rootMidiNote - 12),
+      now + this.glide);
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(0, now);
+      this.gainNode.gain.exponentialRampToValueAtTime(this.velocity,
+        now + Math.max(this.attack / 1000, 0.01));
+      this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+      this.gainNode.gain.exponentialRampToValueAtTime(0.0001,
+        now + Math.max(this.attack / 1000, 0.01) + Math.max(this.decay / 1000, 0.01));
+    }
+    this.sequence.push(this.pitch);
+    this.sequence.shift();
+    this.osc1HasChanged = false;
+    this.stepCount();
+  }
+
+  stepCount(): any {
+    this.step++;
+    if (this.step === 8) { this.step = 0; }
+    if (this.step === 1 || this.step === 5) { this.playKick(); }
+  }
+
+  playKick(): any {
+    this.gainKick.gain.exponentialRampToValueAtTime(0.3, this.context.currentTime + 0.02);
+    this.kick.frequency.linearRampToValueAtTime(110, this.context.currentTime + 0.02);
+    this.gainKick.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.05);
+    this.kick.frequency.linearRampToValueAtTime(55, this.context.currentTime + 0.05);
+  }
+
+  velocityChange($event: any): any {
+    this.velocity = $event.value / 127 * 0.6 + 0.2;
+  }
+
+  gateChange($event: any): any {
+    // this.gateWidth = ($event.value / 127) * 0.8 * this.tempoMS + this.tempoMS * 0.1;
+    // console.log(this.gateWidth);
+    this.attack = $event.value / 127 * 0.4 * this.tempoMS;
+  }
+
+  envelopeChange($event: any): any {
+    // this.attack = $event.value / 127 * 0.8 + 0.1;
+    // this.decay = (1 - ($event.value / 127)) * 0.8 + 0.1;
+    // console.log(this.attack);
+    // console.log(this.decay);
+    this.decay = $event.value / 127 * 0.4 * this.tempoMS;
+  }
+
+  osc2Change($event: any): any {
+    let value = Math.round($event.value / 12.7);
+    switch (value) {
+      case 0:
+        value = 0;
+        break;
+      case 1:
+        value = 2;
+        break;
+      case 2:
+        value = 4;
+        break;
+      case 3:
+        value = 7;
+        break;
+      case 4:
+        value = 9;
+        break;
+      case 5:
+        value = 12;
+        break;
+      case 6:
+        value = 14;
+        break;
+      case 7:
+        value = 16;
+        break;
+      case 8:
+        value = 19;
+        break;
+      case 9:
+        value = 21;
+        break;
+      case 10:
+        value = 24;
+        break;
+      default:
+        value = 5;
         break;
     }
     this.osc2tune = value;
@@ -371,13 +382,14 @@ export class AppComponent implements OnInit {
     this.analyser.minDecibels = -90;
     this.analyser.maxDecibels = -10;
     this.analyser.smoothingTimeConstant = 0.85;
-    this.gateChange({value: 20});
+    this.gateChange({value: 32});
+    this.envelopeChange({value: 96});
     this.drawScope();
   }
 
   drawScope(): any {
     const canvas: any = document.querySelector('.visualizer');
-    const canvasCtx = canvas.getContext("2d");
+    const canvasCtx = canvas.getContext('2d');
     let drawVisual: any;
     this.analyser.fftSize = 2048;
     const bufferLength = this.analyser.fftSize;

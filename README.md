@@ -1,8 +1,12 @@
 # WebAudioDemo
 
-This project was used for development of WEB Audio API audio eninge for [5D-instrument](https://github.com/maceq687/5D-instrument).  
+This project was used for development of Web Audio API audio engine for [5D-instrument](https://github.com/maceq687/5D-instrument).  
 The live demo of the audio engine is available at: https://maceq687.github.io/web-audio-demo/.  
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.1.
+This project was created using Web audio API and [Angular CLI](https://github.com/angular/angular-cli) version 11.2.1.  
+
+<a href="https://maceq687.github.io/web-audio-demo/" target="_blank"><img src="src\assets\web_audio_demo.jpg" alt="web audio demo interface" width="600" height="345" /></a>
+
+You can use keyboard (keys ASDFGHJKL:") to enter new pitch values into the sequence loop.  
 
 ## Development server
 
